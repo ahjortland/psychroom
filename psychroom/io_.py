@@ -9,6 +9,9 @@ import pandas as pd
 from label_handler import translate_keys
 from unit import Unit
 from compat import (casefold, filter, isdecimal, isidentifier)
+from frames import monkey_patch
+
+monkey_patch()
 
 
 def load_(filepath, ext='.htf', **kwargs):
@@ -76,6 +79,7 @@ def read_(filepath_or_buffer, header=0, units=1, **kwargs):
         result = parse_raw_data(f, **kwargs)
 
     result = append_metadata(result, metadata)
+    result._metadata.append('units')
 
     return result
 

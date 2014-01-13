@@ -3,7 +3,7 @@
 from unit import Unit
 
 
-def get_units(frame):
+def get_units(self):
     """Return a dictionary of the units of each column in a data frame.
 
     Parameters
@@ -17,7 +17,7 @@ def get_units(frame):
         dictionary of column names (keys) with the units (values).
 
     """
-    return {key: _unit(frame[key]) for key in frame.keys()}
+    return {key: _unit(self[key]) for key in self.keys()}
 
 
 def _unit(series):
