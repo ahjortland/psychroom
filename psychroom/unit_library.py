@@ -17,7 +17,7 @@ def unit_library():
     BASE_TO_BASE = lambda x: x
     props = namedtuple('UnitProperty', ['symbol', 'quantity', 'name',
                                         'base', 'to_base', 'from_base'])
-    library = {
+    temperature = {
         'kelvin': props(
             quantity='temperature',
             name='Kelvin',
@@ -50,6 +50,9 @@ def unit_library():
             to_base=lambda x: (x + 459.67) / 1.8,
             from_base=lambda x: 1.8 * x - 459.67
         ),
+    }
+
+    pressure = {
         'pascal': props(
             quantity='pressure',
             name='pascals',
@@ -91,6 +94,18 @@ def unit_library():
             name='-',
             symbol='-',
             base='-',
+            to_base=BASE_TO_BASE,
+            from_base=BASE_TO_BASE
+        ),
+    }
+
+    # Undefined Units
+    undefined = {
+        'undefined': props(
+            quantity='undefined',
+            name='undef',
+            symbol='undef',
+            base='undef',
             to_base=BASE_TO_BASE,
             from_base=BASE_TO_BASE
         ),
@@ -245,8 +260,10 @@ def unit_library():
     }
 
     library = dict(
-        list(library.items()) +
+        list(temperature.items()) +
+        list(pressure.items()) +
         list(dimensionless.items()) +
+        list(undefined.items()) +
         list(length.items()) +
         list(mass.items()) +
         list(time.items()) +
