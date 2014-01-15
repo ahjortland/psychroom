@@ -104,6 +104,6 @@ def translate_keys(df, keys=None):
     """
 
     for key in keys:
-        df[key].description = translate_label(key)
+        df[key]._descriptions = translate_label(key)
 
     return df

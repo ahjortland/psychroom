@@ -8,4 +8,8 @@ import tools
 def monkey_patch():
     """Monkey patch the pandas data frame object."""
 
-    pd.DataFrame.get_units = tools.get_units
+    pd.DataFrame._get_metadata = tools._get_metadata
+    pd.DataFrame._update_metadata = tools._update_metadata
+
+    pd.DataFrame.units = tools.units
+    pd.DataFrame.descriptions = tools.descriptions

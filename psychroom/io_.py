@@ -43,15 +43,15 @@ def load_(filepath, ext='.htf', **kwargs):
         data={name: item.mean() for name, item in data.items()}
     ).T
     for key in summary.keys():
-        summary[key].unit = data[0][key].unit
+        summary[key]._units = data[0][key]._units
     for id_, _ in summary.iterrows():
         for section, metadata in data[id_].metadata.items():
             for key, info in metadata.items():
                 if key in summary.keys():
-                    summary[key][id_], summary[key].unit = info
+                    summary[key][id_], summary[key]._units = info
                 else:
                     summary[key] = info.value
-                    summary[key].unit = info.unit
+                    summary[key]._units = info.unit
 
     return data, summary
 
@@ -79,7 +79,13 @@ def read_(filepath_or_buffer, header=0, units=1, **kwargs):
         result = parse_raw_data(f, **kwargs)
 
     result = append_metadata(result, metadata)
-    result._metadata.append('units')
+
+    # Currently, pandas only copies attributes that are added to
+    # _metadata when it is copied.  Since pandas actually copies
+    # frames frequently, this is a problem. To get around this, use
+    # monkey-patching to store frame attributes and methods.
+    result._metadata.append('_units')  # unit dictionary
+    result._metadata.append('_descriptions')  # description dictionary
 
     return result
 
@@ -168,10 +174,13 @@ def parse_raw_data(handle, **kwargs):
     # TODO It would be cool if key-unit pairs were methods that updated
     # with each call.
     for key, unit in zip(result.keys(), column_units):
-        result[key].unit = Unit(unit)
-    result.units = {key: result[key].unit for key in result.keys()}
+        result[key]._units = Unit(unit)
+    result._units = {key: result[key]._units for key in result.keys()}
 
     result = translate_keys(result, result.keys())
+    result._descriptions = {
+        key: result[key]._descriptions for key in result.keys()
+    }
 
     return result
 
@@ -249,11 +258,6 @@ def append_metadata(data, metadata):
             {key: [info.value] for key, info in meta.items()}
         )
         for key, info in meta.items():
-            data.__dict__[section][key].unit = info.unit
+            data.__dict__[section][key]._units = info.unit
 
     return data
-
-
-def get_units(frame):
-    return {key: frame[key].unit if hasattr(frame[key], 'unit')
-            else Unit() for key in frame.keys()}
