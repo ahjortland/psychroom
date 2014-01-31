@@ -66,12 +66,78 @@ def set_fonts(context, base=None):
 
     if context in ('article', 'report', 'beamer', ):
         params['text.usetex'] = True
+        params['text.latex.unicode'] = True
 
     params['font.serif'] = 'Computer Modern Roman'
     params['font.sans-serif'] = 'Computer Modern Sans serif'
     params['font.monospace'] = 'Computer Modern Typewriter'
 
     mpl.rcParams.update(params)
+
+
+def set_axis_style(style, context, latex_params=None, font=None,
+                   gridweight=None):
+    """Set the axis style.
+
+    Parameters
+    ----------
+    style : darkgrid | whitegrid | nogrid | ticks
+        Style of the axis background.
+    context : notebook | talk | paper | poster
+        Intended context for resulting figures.
+    latex_params : latex DocumentClass parameters
+        DocumentClass parameters used in intended latex document
+        preamble.
+    font : matplotlib font spec
+        Font to use for text in the figures.
+    gridweight : extra heavy | heavy | medium | light | None
+
+    """
+
+    # Validate the arguments.
+    if not {'darkgrid', 'whitegrid', 'nogrid', 'ticks'} & {style}:
+        raise ValueError("Style '{}' not recognized.".format(style))
+
+    if not {'notebook', 'talk', 'paper', 'poster'} & {context}:
+        raise ValueError("Context '{}' not recognized.".format(context))
+
+    # Determine the axis parameters.
+
+    # Turn ticks off; they will get turned back on in 'ticks' style.
+    _set_tick_size(0, 0)
+
+    GRID_WEIGHTS = {
+        'extra heavy': 1.5,
+        'heavy': 1.1,
+        'medium': 0.8,
+        'light': 0.5,
+    }
+    if gridweight is None:
+        if context == 'paper':
+            glw = GRID_WEIGHTS['light']
+        else:
+            glw = GRID_WEIGHTS['medium']
+    elif isinstance(gridweight, float) or isinstance(gridweight, int):
+        glw = gridweight
+    else:
+        glw = GRID_WEIGHTS[gridweight]
+
+
+def _set_tick_size(major, minor):
+    """Set the axis tick size parameters.
+
+    Parameters
+    ----------
+    major : float
+        major tick size parameter
+    minor : float
+        minor tick size parameter
+
+    """
+    mpl.rc("xtick.major", size=major)
+    mpl.rc("xtick.minor", size=minor)
+    mpl.rc("ytick.major", size=major)
+    mpl.rc("ytick.minor", size=minor)
 
 
 def set_figure(context, size=None):
@@ -159,27 +225,27 @@ def set_axes(style='academic'):
     mpl.rcParams.update(params)
 
 
-def latex_figure_size(options):
+def latex_figure_size(**kwargs):
     """Set parameters that make latex figures pretty."""
 
     PT_TO_IN = 1. / 72.27  # point to inches conversion
     GOLDEN_MEAN = 0.5 * (sqrt(5.) - 1.)  # aesthetic ratio
 
     column_widths = {
-        1: {'10pt': 345.0, '11pt': 360.0, '12pt': 390.0},
-        2: {'10pt': 167.5, '11pt': 175.0, '12pt': 190.0},
-        3: {'10pt': 108.3, '11pt': 113.3, '12pt': 123.3},
-        4: {'10pt': 78.75, '11pt': 82.5, '12pt': 90.0},
-        5: {'10pt': 61.0, '11pt': 64.0, '12pt': 70.0},
+        1: {10: 345.0, 11: 360.0, 12: 390.0},
+        2: {10: 167.5, 11: 175.0, 12: 190.0},
+        3: {10: 108.3, 11: 113.3, 12: 123.3},
+        4: {10: 78.75, 11: 82.5, 12: 90.0},
+        5: {10: 61.0, 11: 64.0, 12: 70.0},
     }
 
-    columns = options['columns'] if 'columns' in options else 1
-    fontsize = options['fontsize'] if 'fontsize' in options else '11pt'
+    columns = kwargs['columns'] if 'columns' in kwargs else 1
+    fontsize = kwargs['fontsize'] if 'fontsize' in kwargs else 11
 
     figure_width = column_widths[columns][fontsize] * PT_TO_IN
     figure_height = figure_width * GOLDEN_MEAN
 
-    return [figure_width, figure_height]
+    return figure_width, figure_height
 
 
 def remove_border(axes=None, top=False, right=False, left=True, bottom=True):
