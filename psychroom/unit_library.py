@@ -97,6 +97,14 @@ def unit_library():
             to_base=BASE_TO_BASE,
             from_base=BASE_TO_BASE
         ),
+        'percentage': props(
+            quantity='dimensionless',
+            name='percent',
+            symbol='percent',
+            base='dimensionless',
+            to_base=lambda x: x * 10 ** -2
+            from_base=lambda x: x * 10 ** 2
+        ),
     }
 
     # Undefined Units
