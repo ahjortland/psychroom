@@ -102,7 +102,7 @@ def unit_library():
             name='percent',
             symbol='percent',
             base='dimensionless',
-            to_base=lambda x: x * 10 ** -2
+            to_base=lambda x: x * 10 ** -2,
             from_base=lambda x: x * 10 ** 2
         ),
     }
