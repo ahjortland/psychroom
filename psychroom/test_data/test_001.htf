@@ -3,9 +3,9 @@ tester = Andrew Hjortland
 test date = 2013-08-23
 [test conditions]
 idrm_air_T = 35.90 [degC]
-idrm_air_RH = 0.64 [-]
+idrm_air_RH = 0.64 []
 odrm_air_T = 23.78 [degC]
-odrm_air_RH = 0.50 [-]
+odrm_air_RH = 0.50 []
 [raw data]
 ,comp_ref_in_T,comp_ref_in_pa,comp_ref_out_T,comp_ref_out_pa
 yyyy-mm-dd HH:MM:SS,degC,kPa,degC,kPa
