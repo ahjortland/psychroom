@@ -267,6 +267,34 @@ def unit_library():
         ),
     }
 
+    # Units of power
+    power = {
+        'watt': props(
+            quantity='power',
+            name='watt',
+            symbol='W',
+            base='W',
+            to_base=BASE_TO_BASE,
+            from_base=BASE_TO_BASE
+        ),
+        'british themal unit per hour': props(
+            quantity='power',
+            name='british themal unit per hour',
+            symbol='Btu/h',
+            base='W',
+            to_base=lambda x: x * 0.29329722,
+            from_base=lambda x: x * 3.4095106405145
+        ),
+        'tons (power)': props(
+            quantity='power',
+            name='tons (power)',
+            symbol='tons',
+            base='W',
+            to_base=lambda x: x * 3516.85284,
+            from_base=lambda x: x * 0.000284345
+        ),
+    }
+
     library = dict(
         list(temperature.items()) +
         list(pressure.items()) +
@@ -276,7 +304,8 @@ def unit_library():
         list(mass.items()) +
         list(time.items()) +
         list(current.items()) +
-        list(voltage.items())
+        list(voltage.items()) +
+        list(power.items())
     )
 
     return library
