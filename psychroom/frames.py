@@ -4,6 +4,8 @@ import pandas as pd
 
 import tools
 
+pd.set_option('chained_assignment', None)
+
 
 def monkey_patch():
     """Monkey patch the pandas data frame object."""
@@ -13,3 +15,5 @@ def monkey_patch():
 
     pd.DataFrame.units = tools.units
     pd.DataFrame.descriptions = tools.descriptions
+    pd.DataFrame.explore = tools.explore
+    pd.DataFrame.convert = tools.convert
