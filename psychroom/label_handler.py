@@ -2,7 +2,7 @@
 
 from os import path
 
-from compat import PY3
+from .compat import PY3
 
 if PY3:
     from configparser import SafeConfigParser

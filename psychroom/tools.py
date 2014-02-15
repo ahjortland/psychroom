@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Useful tools when dealing with Test Data Frames."""
 
-from unit import ureg
-from compat import PY3
+from .unit import ureg
+from .compat import PY3
 
 def _get_metadata(self, attr, **kwargs):
     """Get a metadata property from a data frame.
