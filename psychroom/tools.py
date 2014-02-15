@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
 """Useful tools when dealing with Test Data Frames."""
 
+from unit import ureg
+from compat import PY3
 
 def _get_metadata(self, attr, **kwargs):
     """Get a metadata property from a data frame.
@@ -72,7 +75,9 @@ def units(self, keys=None):
 
     units = self._get_metadata('_units')
     if keys:
-        return {key: val for key, val in units.items() if key in keys}
+        units = {key: val for key, val in units.items() if key in keys}
+        if len(units) == 1:
+            return units.popitem()[1]
     else:
         return units
 
@@ -82,7 +87,7 @@ def descriptions(self, keys=None):
 
     Parameters
     ----------
-    key : column name string
+    keys : column name string
         When passed, the unit of the column named key is returned.
 
     Returns
@@ -97,3 +102,89 @@ def descriptions(self, keys=None):
         return {key: val for key, val in desc.items() if key in keys}
     else:
         return desc
+
+
+def explore(self, keys=None):
+    """Print a information describing each column of a data frame.
+
+    Parameters
+    ----------
+    keys : column name string
+        When passed, the unit of the column named key is returned.
+
+    """
+
+    if PY3:
+        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2:P}"
+    else:
+        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2}"
+
+    if not keys:
+        for desc, unit in zip(self.descriptions().items(),
+                              self.units().items()):
+            print(explore_string.format(desc[0], desc[1], unit[1]))
+    else:
+        pass
+
+
+def convert(self, key, unit, overwrite=False):
+    """Convert a column in a data frame to a new unit.
+
+    Parameters
+    ----------
+    key : column name string or dimension string
+        column names which will be converted to new unit or a dimensionality
+        identifier corresponding to the group of columns to be converted.
+    unit : string or pint Unit
+        unit identifying string or pint unit object
+    overwrite : [False] | True
+        original data frame values will be overwritten if True
+
+    Returns
+    -------
+    result : data frame
+        updated subset or entire data frame
+
+    """
+
+    dimensions = {
+        '[temperature]': ureg['kelvin'].dimensionality,
+        '[pressure]': ureg['pascal'].dimensionality,
+        '[power]': ureg['watt'].dimensionality,
+        '[volume flow rate]': ureg['cubic meter per second'].dimensionality,
+        '[mass flow rate]': ureg['kg per second'].dimensionality,
+        '[enthalpy]': ureg['kilojoules per kilogram'].dimensionality,
+        '[entropy]': ureg['kilojoules / kilogram / kelvin'].dimensionality,
+        '[volume]': ureg['cubic meter'].dimensionality,
+        '[mass]': ureg['kilogram'].dimensionality,
+    }
+
+    try:
+        if key in dimensions:
+            dim = dimensions[key]
+            key = [
+                k for k in self.keys() if self.units(k).dimensionality == dim
+            ]
+            old_unit = [self.units(k) for k in key]
+        else:
+            key = [key] if isinstance(key, str) else key
+            old_unit = [self.units(key[0])]
+    except TypeError:
+        old_unit = [self.units(k) for k in key]
+
+    if isinstance(unit, str):
+        unit = ureg[unit]
+
+    conversion = lambda x, u: (x * u).to(unit).magnitude
+
+    if not overwrite:
+        result = self[key]
+        for k, u in zip(key, old_unit):
+            result[k] = self[k].apply(lambda x: conversion(x, u))
+            result._units[k] = unit
+        return result
+    else:
+        for k, u in zip(key, old_unit):
+            self[k] = self[k].apply(lambda x: conversion(x, u))
+            self._units[k] = unit
+        return self[key]

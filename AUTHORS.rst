@@ -11,6 +11,9 @@ Contributors
 
 *  Howard Cheung (`@howardcheung`_)
 *  Christian Bach (`@bachc`_)
+
+Former Contributors
+-------------------
 *  Tim Blatchley
 *  Bernhard Vetsch
 
