@@ -14,7 +14,7 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-readme = open('README').read()
+readme = open('README.md').read()
 history = open('CHANGES').read().replace('.. :changelog:', '')
 
 setup(
