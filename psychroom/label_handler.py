@@ -1,6 +1,6 @@
 """Utility functions used for working with sensor measurment data."""
 
-from os import path
+import pkg_resources
 
 from .compat import PY3
 
@@ -71,7 +71,9 @@ def translate_label(label, library=None, sep='_'):
     """
 
     if not library:
-        library = load_library(path.abspath('./defaults.ini'))
+        library = load_library(
+            pkg_resources.resource_filename(__name__, 'defaults.ini')
+        )
 
     SECTIONS = ('components', 'fluids', 'locations', 'measurement types')
 
