@@ -2,7 +2,7 @@
 """Useful tools when dealing with Test Data Frames."""
 
 from unit import ureg
-
+from compat import PY3
 
 def _get_metadata(self, attr, **kwargs):
     """Get a metadata property from a data frame.
@@ -114,7 +114,11 @@ def explore(self, keys=None):
 
     """
 
-    explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2:P}"
+    if PY3:
+        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2:P}"
+    else:
+        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2}"
+
     if not keys:
         for desc, unit in zip(self.descriptions().items(),
                               self.units().items()):
