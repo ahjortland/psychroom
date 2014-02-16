@@ -2,7 +2,8 @@
 
 import pandas as pd
 
-import tools
+from .tools import (_get_metadata, _update_metadata, units, descriptions,
+                    explore, convert)
 
 pd.set_option('chained_assignment', None)
 
@@ -10,10 +11,10 @@ pd.set_option('chained_assignment', None)
 def monkey_patch():
     """Monkey patch the pandas data frame object."""
 
-    pd.DataFrame._get_metadata = tools._get_metadata
-    pd.DataFrame._update_metadata = tools._update_metadata
+    pd.DataFrame._get_metadata = _get_metadata
+    pd.DataFrame._update_metadata = _update_metadata
 
-    pd.DataFrame.units = tools.units
-    pd.DataFrame.descriptions = tools.descriptions
-    pd.DataFrame.explore = tools.explore
-    pd.DataFrame.convert = tools.convert
+    pd.DataFrame.units = units
+    pd.DataFrame.descriptions = descriptions
+    pd.DataFrame.explore = explore
+    pd.DataFrame.convert = convert

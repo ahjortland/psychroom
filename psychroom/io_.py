@@ -6,10 +6,10 @@ from os.path import join
 
 import pandas as pd
 
-from label_handler import translate_keys
-from unit import parse_unit_string
-from compat import (casefold, filter, isdecimal, isidentifier)
-from frames import monkey_patch
+from .label_handler import translate_keys
+from .unit import parse_unit_string
+from .compat import (casefold, filter, isdecimal, isidentifier)
+from .frames import monkey_patch
 
 monkey_patch()
 

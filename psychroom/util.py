@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility functions and variables used throughout code."""
 
-from compat import PY3
+from .compat import PY3
 
 
 if PY3:
