@@ -588,5 +588,5 @@ below.
 
 ### Example Systems
 
-* [Refrigerant circuit of a ductless, split system heat pump](https://github.com/ahjortland/psychroom/tree/master/docs/dhp_example_labels.md)
-* [Air-side measurements of a rooftop air conditioner](https://github.com/ahjortland/psychroom/tree/master/docs/rtu_example_labels.md)
+* [Refrigerant circuit of a ductless, split system heat pump](https://github.com/ahjortland/psychroom/tree/master/docs/standard/dhp_example_labels.md)
+* [Air-side measurements of a rooftop air conditioner](https://github.com/ahjortland/psychroom/tree/master/docs/standard/rtu_example_labels.md)

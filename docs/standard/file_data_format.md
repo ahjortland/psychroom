@@ -12,7 +12,7 @@ measured data begins. Measurements recorded take the following form:
 
 Each measurements label should be recorded here as comma-separated list. The
 labels should be recorded using the labeling convention described
-[here](https://github.com/ahjortland/psychroom/blob/master/docs/label_convention.md).
+[here](https://github.com/ahjortland/psychroom/blob/master/docs/standard/label_convention.md).
 
 It should also be noted that a label for the timestamps is not required and a
 blank space should be recorded in its place.

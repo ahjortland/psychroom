@@ -12,7 +12,7 @@ In this example, an experiment was designed to measure the states of refrigerant
 between components and the refrigerant mass flow rate of the system. The
 schematic of the sensor location is given as follows.
 
-<img src="https://raw.github.com/ahjortland/psychroom/master/docs/pictures/DHP.png" alt="DHP_ref_fig" title="DHP_ref_fig" style="width: 500px;"/>
+<img src="https://raw.github.com/ahjortland/psychroom/master/docs/standard/pictures/DHP.png" alt="DHP_ref_fig" title="DHP_ref_fig" style="width: 500px;"/>
 
 In the schematic, the indoor unit is named as ahu1 and the outdoor unit is named
 as ahu2. M stands for refrigerant mass flowmeter, T stands for immersion
