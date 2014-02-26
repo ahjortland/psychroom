@@ -27,7 +27,7 @@ Thus, the preferred unit convention is as follows:
 <TBODY>
     <TR>
         <TD>length
-        <TD>metre
+        <TD>meter
         <TD>m
         <TD>'m'
     </TR>
@@ -124,7 +124,7 @@ Thus, the preferred unit convention is as follows:
         <TD>'F'
     </TR>
     <TR>
-        <TD>electric resistance, impedence, reactance
+        <TD>electric resistance, impedance, reactance
         <TD>ohm
         <TD>Ω
         <TD>'ohm'

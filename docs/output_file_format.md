@@ -47,7 +47,7 @@ In essence, the experimental data file is a configuration with a
 comma-separated file appended to it. To identify this type of file, the
 default convention used will be to save the file with a `.htf` extension. A
 further explanation how each section recorded in the output file should be
-formated can be found:
+formatted can be found:
 
 * [Header Format](https://github.com/ahjortland/psychroom/tree/master/docs/file_header_format.md)
 * [Data Output Format](https://github.com/ahjortland/psychroom/tree/master/docs/file_data_format.md)
