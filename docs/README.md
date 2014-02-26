@@ -12,9 +12,3 @@ chambers.
 * [Test Output File Format](https://github.com/ahjortland/psychroom/tree/master/docs/output_file_format.md)
  * [Header Format](https://github.com/ahjortland/psychroom/tree/master/docs/file_header_format.md)
  * [Data Output Format](https://github.com/ahjortland/psychroom/tree/master/docs/file_data_format.md)
-
-## Measurement Data Output File Format
-
-### File Header Information
-
-What do we put in the header?
