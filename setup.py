@@ -15,7 +15,7 @@ if sys.argv[-1] == 'publish':
     sys.exit()
 
 readme = open('README.md').read()
-history = open('CHANGES').read().replace('.. :changelog:', '')
+history = open('HISTORY').read().replace('.. :changelog:', '')
 
 setup(
     name='psychroom',

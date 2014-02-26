@@ -114,10 +114,7 @@ def explore(self, keys=None):
 
     """
 
-    if PY3:
-        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2:P}"
-    else:
-        explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2}"
+    explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2}"
 
     if not keys:
         for desc, unit in zip(self.descriptions().items(),
