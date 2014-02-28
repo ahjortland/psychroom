@@ -1,0 +1,7 @@
+[uncertainty]
+x(s); expr;
+idhx_air_in_RH; idhx_air_in_T; sqrt(Piecewise((0.02, x0<0.9), (0.02+0.1*(x0-0.9), True))**2+Piecewise((0.015-0.0005*(x1+20), x1<10), (0.013+0.000325*(x1-80), x1>40), (0, True))**2);
+idhx_air_in_T; 0.5;
+comp_ref_out_T; 0.5;
+comp_ref_out_pg; x0*0.005;
+idhx_air_out_RH; idhx_air_in_T; Piecewise((0.015-0.0005*(x1+20), x1<10), (0.013+0.000325*(x1-80), x1>40), (0, True));

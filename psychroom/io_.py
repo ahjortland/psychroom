@@ -7,7 +7,7 @@ from os.path import join
 import pandas as pd
 
 from label_handler import translate_keys
-from unit import Unit
+from unit import parse_unit_string
 from compat import (casefold, filter, isdecimal, isidentifier)
 from frames import monkey_patch
 
@@ -146,7 +146,7 @@ def parse_metadata_info(info):
         elif value.isdigit():
             value = int(value)
         elif isdecimal(value.replace('.', '')):
-            unit = Unit(unit)
+            unit = parse_unit_string(unit)
             value = float(value)
 
     return value, unit
@@ -174,7 +174,7 @@ def parse_raw_data(handle, **kwargs):
     # TODO It would be cool if key-unit pairs were methods that updated
     # with each call.
     for key, unit in zip(result.keys(), column_units):
-        result[key]._units = Unit(unit)
+        result[key]._units = parse_unit_string(unit)
     result._units = {key: result[key]._units for key in result.keys()}
 
     result = translate_keys(result, result.keys())
