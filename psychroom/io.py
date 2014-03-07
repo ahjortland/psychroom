@@ -10,6 +10,7 @@ from .label_handler import translate_keys
 from .unit import parse_unit_string
 from .compat import (casefold, filter, isdecimal, isidentifier)
 from .frames import monkey_patch
+from .uncer_class import info_uncer, eval_uncer
 
 monkey_patch()
 
@@ -103,9 +104,14 @@ def read(filepath_or_buffer, header=0, units=1, **kwargs):
     # _metadata when it is copied.  Since pandas actually copies
     # frames frequently, this is a problem. To get around this, use
     # monkey-patching to store frame attributes and methods.
+
     result._metadata.append('_units')  # unit dictionary
     result._metadata.append('_descriptions')  # description dictionary
     result._metadata = list(set(result._metadata))
+
+    # TO DO: only add _descriptions to the main data pandas Dataframe but not
+    # the others
+    result.__dict__[metadata.keys()[0]]._metadata.remove('_descriptions')
 
     return result
 
@@ -128,17 +134,23 @@ def parse_metadata(handle):
 
     metadata = {}
     while True:
-        line = handle.readline().strip()
+        line = handle.readline().strip(' ;\n')
         if line.startswith('[raw data]'):
             return metadata
         elif line.startswith('[') and line.endswith(']'):
             section = cleanse_names(line.strip().strip('[]'))
             metadata[section] = {}
         else:
-            key, info = [item.strip() for item in line.split('=')]
-            key = cleanse_names(key)
-            value, unit = parse_metadata_info(info)
-            metadata[section][key] = MetadataInfo(*parse_metadata_info(info))
+            if section == 'uncertainty':
+                key, info = parse_uncertainty_data(line)
+                metadata[section][key] = info
+            else:
+                key, info = [item.strip() for item in line.split('=')]
+                key = cleanse_names(key)
+                value, unit = parse_metadata_info(info)
+                metadata[section][key] = MetadataInfo(
+                    *parse_metadata_info(info)
+                )
 
 
 def parse_metadata_info(info):
@@ -170,6 +182,34 @@ def parse_metadata_info(info):
             value = float(value)
 
     return value, unit
+
+
+def parse_uncertainty_data(line):
+    """Parse test data file uncertainty information string into information
+    in uncer_class.info_uncer
+
+    Parameters
+    ----------
+    line : test data file handle
+
+    Returns
+    -------
+    key : string
+        name of the variable of which the uncertainty information is stored in
+        info
+    info: uncer_class.info_uncer
+        info_uncer class storing the sympy expression for calculation of
+        uncertainty
+
+    """
+
+    entry = map(str.strip, line.split(';'))
+    if len(entry) == 1:  # assume zero uncertainty
+        info = info_uncer(x_name=entry[0], expr=0.)
+    else:
+        info = info_uncer(x_name=entry[:-1], expr=entry[-1])
+    key = entry[0]
+    return key, info
 
 
 def parse_raw_data(handle, **kwargs):
@@ -274,10 +314,26 @@ def append_metadata(data, metadata):
 
     data.metadata = metadata
     for section, meta in metadata.items():
-        data.__dict__[section] = pd.DataFrame(
-            {key: [info.value] for key, info in meta.items()}
-        )
-        for key, info in meta.items():
-            data.__dict__[section][key]._units = info.unit
+        if section == 'uncertainty':
+            data.__dict__[section] = pd.DataFrame(
+                data={key: eval_uncer(
+                    key, data, info
+                ) for key, info in meta.items()},
+                index=data.index
+            )
+            for key, info in meta.items():
+                data.__dict__[section][key]._units = data[key]._units
+        else:
+            data.__dict__[section] = pd.DataFrame(
+                {key: [info.value] for key, info in meta.items()}
+            )
+            for key, info in meta.items():
+                data.__dict__[section][key]._units = info.unit
+
+        # setting unit dictionary
+        data.__dict__[section]._units = {
+            key: data.__dict__[section][key]._units
+            for key in data.__dict__[section].keys()
+        }
 
     return data
