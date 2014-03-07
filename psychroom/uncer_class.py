@@ -12,7 +12,7 @@ from frames import monkey_patch
 monkey_patch()
 
 
-class Info_uncer():
+class info_uncer():
     """To store mathematical expressions to calculate the uncertainty of
        the variables
 
@@ -48,15 +48,15 @@ class Info_uncer():
 
     def __repr__(self):
         # printing methods
-        output = "\nUncertainty information of x0 "+self.x_name[0]+"\n"
+        output = "UncertaintyInfo(Eqn='"+str(self.expr)+"', "
+        output = output+"Variables=['"+self.x_name[0]+"'"
         if len(self.x_name) > 1:
-            output = output+"which other variables:\n"
             for i in range(1, len(self.x_name)):
-                output = output+"x"+str(i)+": "+self.x_name[i]+"\n"
-                if i > 5:
-                    output = output+'......\n'
+                output = output+", '"+self.x_name[i]+"'"
+                if i > 3:
+                    output = output+',......'
                     break
-        output = output+"with uncertainty calculated by: "+str(self.expr)+"\n"
+        output = output+"])"
         return output
 
     def _set_var(self):
@@ -96,10 +96,12 @@ def eval_uncer(col_name, data, info):
             var_dict[info.x_var[i]] = data[info.x_name[i]][index]
         return var_dict
 
+    # convert all the final results to numpy float64
     if info.expr.is_number:
-        uncer_cal = [info.expr.evalf()]*len(data.index)
+        uncer_cal = [np.float64(info.expr.evalf())]*len(data.index)
     else:
         uncer_cal = [
-            info.expr.evalf(subs=_var_dict(index)) for index in data.index
+            np.float(info.expr.evalf(subs=_var_dict(index)))
+            for index in data.index
         ]
     return uncer_cal
