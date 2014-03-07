@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """Useful tools when dealing with Test Data Frames."""
 
+from copy import deepcopy
+import pdb
+
 from .unit import ureg
 from .compat import PY3
+
 
 def _get_metadata(self, attr, **kwargs):
     """Get a metadata property from a data frame.
@@ -175,9 +179,10 @@ def convert(self, key, unit, overwrite=False):
     conversion = lambda x, u: (x * u).to(unit).magnitude
 
     if not overwrite:
-        result = self[key]
-        for k, u in zip(key, old_unit):
-            result[k] = self[k].apply(lambda x: conversion(x, u))
+        result = deepcopy(self[key])  # create new pandas Dataframe to return
+        result._units = {}
+        for k, uu in zip(key, old_unit):
+            result[k] = self[k].apply(lambda x: conversion(x, uu))
             result._units[k] = unit
         return result
     else:
