@@ -3,6 +3,9 @@
 from collections import namedtuple
 import os
 from os.path import join
+import pdb
+import sympy as sym
+from sympy.core.sympify import SympifyError
 
 import pandas as pd
 
@@ -10,7 +13,7 @@ from .label_handler import translate_keys
 from .unit import parse_unit_string
 from .compat import (casefold, filter, isdecimal, isidentifier)
 from .frames import monkey_patch
-from .uncer_class import info_uncer, eval_uncer
+from .uncer_cal import eval_uncer
 
 monkey_patch()
 
@@ -98,6 +101,7 @@ def read(filepath_or_buffer, header=0, units=1, **kwargs):
         metadata = parse_metadata(f)
         result = parse_raw_data(f, parse_dates=True, **kwargs)
 
+    cleanse_uncer(result, metadata)
     result = append_metadata(result, metadata)
 
     # Currently, pandas only copies attributes that are added to
@@ -131,6 +135,7 @@ def parse_metadata(handle):
     """
 
     MetadataInfo = namedtuple('MetadataInfo', ['value', 'unit'])
+    Uncertainty = namedtuple('Uncertainty', ['var', 'eqn'])
 
     metadata = {}
     while True:
@@ -141,11 +146,12 @@ def parse_metadata(handle):
             section = cleanse_names(line.strip().strip('[]'))
             metadata[section] = {}
         else:
+            key, info = [item.strip() for item in line.split('=')]
             if section == 'uncertainty':
-                key, info = parse_uncertainty_data(line)
-                metadata[section][key] = info
+                metadata[section][key] = Uncertainty(
+                    *parse_uncertainty_data(key, info)
+                )
             else:
-                key, info = [item.strip() for item in line.split('=')]
                 key = cleanse_names(key)
                 value, unit = parse_metadata_info(info)
                 metadata[section][key] = MetadataInfo(
@@ -184,32 +190,46 @@ def parse_metadata_info(info):
     return value, unit
 
 
-def parse_uncertainty_data(line):
-    """Parse test data file uncertainty information string into information
-    in uncer_class.info_uncer
+def parse_uncertainty_data(key, info):
+    """Parse test data file uncertainty information string
 
     Parameters
     ----------
-    line : test data file handle
+    key   : string
+        name of the variable of which the uncertainty information is stored in
+        info
+    info  : string
+        rest of the information, including other variables in the uncertainty
+        equation and the equation itself
 
     Returns
     -------
-    key : string
-        name of the variable of which the uncertainty information is stored in
-        info
-    info: uncer_class.info_uncer
-        info_uncer class storing the sympy expression for calculation of
-        uncertainty
+    var   : list of string
+        names of variables
+    eqn   : sympy expressions
+        mathematical expressions or values of uncertainties, in which
+        variables are represented by x0, x1, x2, etc.
 
     """
 
-    entry = map(str.strip, line.split(';'))
-    if len(entry) == 1:  # assume zero uncertainty
-        info = info_uncer(x_name=entry[0], expr=0.)
+    if info.rfind('}') > 0:
+        var, _, eqn = [item.strip() for item in info.partition('}')]
+        var = [key]+[item.strip('{} ') for item in var.split(',')]
+        eqn = eqn.strip()
     else:
-        info = info_uncer(x_name=entry[:-1], expr=entry[-1])
-    key = entry[0]
-    return key, info
+        var = [key]
+        eqn = info.strip()
+
+    if len(eqn) == 0:  # assume zero uncertainty
+        eqn = 0.
+
+    try:
+        eqn = sym.sympify(eqn)
+    except SympifyError:
+        print('Cannot convert '+eqn+' into Sympy expressions')
+        eqn = sym.sympify('nan')
+
+    return var, eqn
 
 
 def parse_raw_data(handle, **kwargs):
@@ -243,6 +263,50 @@ def parse_raw_data(handle, **kwargs):
     }
 
     return result
+
+
+def cleanse_uncer(data, metadata):
+    """Cleanse the uncertainty information by
+        passing the original unit information
+        set the uncertainty values which is absent in the information as zero
+
+    Parameters
+    ----------
+    data : pandas DataFrame
+        measurement DataFrame associated with metadata.
+    metadata : dict
+        metadata dictionary usually parsed from test data file header.
+
+    Returns
+    -------
+    metadata : dict
+        metadata dictionary usually parsed from test data file header.
+
+    """
+
+    UncertaintyInfo = namedtuple('UncertaintyInfo', ['var', 'eqn', 'ori_unit'])
+
+    def _zero_uncertainty(key):
+        return UncertaintyInfo([key], sym.sympify(0.), data[key]._units)
+
+    if 'uncertainty' in metadata.keys():
+        # check if uncertainty info exists for the variables and 
+        for key in data.keys():
+            if key not in metadata['uncertainty']:  # set zero uncertainty
+                metadata['uncertainty'][key] = _zero_uncertainty(key)
+            else:  # add the unit information to UncertaintyInfo
+                info = metadata['uncertainty'][key]
+                unit = []
+                var = []
+                for name in info.var:
+                    unit.append(data[name]._units)
+                    var.append(name)
+                metadata['uncertainty'][key] = \
+                    UncertaintyInfo(var, info.eqn, unit)
+    else:
+        metadata['uncertainty'] = {}
+        for key in data.keys():
+            metadata['uncertainty'][key] = _zero_uncertainty(key)
 
 
 def cleanse_names(names, bad_chars=[], repl='_'):
