@@ -388,7 +388,7 @@ def append_metadata(data, metadata):
             )
             for key, info in meta.items():
                 if data[key]._units.dimensionality.__str__() != \
-                    '[temperature]':
+                        '[temperature]':
                     data.__dict__[section][key]._units = data[key]._units
                 else:
                     # change to temperature difference

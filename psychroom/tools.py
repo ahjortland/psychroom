@@ -141,7 +141,7 @@ def convert(self, key, unit, overwrite=False, cal_uncer=False):
     overwrite : [False] | True
         original data frame values will be overwritten if True
     cal_uncer : [False] | True
-        uncertainty will be recalculated and appended to the returned 
+        uncertainty will be recalculated and appended to the returned
         data frame if True.
 
     Returns
@@ -184,7 +184,7 @@ def convert(self, key, unit, overwrite=False, cal_uncer=False):
 
     def _uncer_conversion(key):
         if self.uncertainty._units[key].dimensionality.__str__() != \
-            '[delta_temperature]':
+                '[delta_temperature]':
             temp = convert(
                 self.uncertainty, key, unit, overwrite=False,
                 cal_uncer=False
