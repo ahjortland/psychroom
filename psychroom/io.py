@@ -13,6 +13,7 @@ from .label_handler import translate_keys
 from .unit import parse_unit_string
 from .compat import (casefold, filter, isdecimal, isidentifier)
 from .frames import monkey_patch
+from .unit import parse_unit_string
 from .uncer_cal import eval_uncer
 
 monkey_patch()
@@ -287,10 +288,10 @@ def cleanse_uncer(data, metadata):
     UncertaintyInfo = namedtuple('UncertaintyInfo', ['var', 'eqn', 'ori_unit'])
 
     def _zero_uncertainty(key):
-        return UncertaintyInfo([key], sym.sympify(0.), data[key]._units)
+        return UncertaintyInfo([key], sym.sympify(0.), [data[key]._units])
 
     if 'uncertainty' in metadata.keys():
-        # check if uncertainty info exists for the variables and 
+        # check if uncertainty info exists for the variables
         for key in data.keys():
             if key not in metadata['uncertainty']:  # set zero uncertainty
                 metadata['uncertainty'][key] = _zero_uncertainty(key)
@@ -386,7 +387,14 @@ def append_metadata(data, metadata):
                 index=data.index
             )
             for key, info in meta.items():
-                data.__dict__[section][key]._units = data[key]._units
+                if data[key]._units.dimensionality.__str__() != \
+                    '[temperature]':
+                    data.__dict__[section][key]._units = data[key]._units
+                else:
+                    # change to temperature difference
+                    data.__dict__[section][key]._units = parse_unit_string(
+                        'delta_'+data[key]._units.units.__str__()
+                    )
         else:
             data.__dict__[section] = pd.DataFrame(
                 {key: [info.value] for key, info in meta.items()}
