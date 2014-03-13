@@ -128,7 +128,7 @@ def explore(self, keys=None):
         pass
 
 
-def convert(self, key, unit, overwrite=False):
+def convert(self, key, unit, overwrite=False, cal_uncer=False):
     """Convert a column in a data frame to a new unit.
 
     Parameters
@@ -140,6 +140,9 @@ def convert(self, key, unit, overwrite=False):
         unit identifying string or pint unit object
     overwrite : [False] | True
         original data frame values will be overwritten if True
+    cal_uncer : [False] | True
+        uncertainty will be recalculated and appended to the returned 
+        data frame if True.
 
     Returns
     -------
@@ -150,6 +153,7 @@ def convert(self, key, unit, overwrite=False):
 
     dimensions = {
         '[temperature]': ureg['kelvin'].dimensionality,
+        '[delta_temperature]': ureg['delta_kelvin'].dimensionality,
         '[pressure]': ureg['pascal'].dimensionality,
         '[power]': ureg['watt'].dimensionality,
         '[volume flow rate]': ureg['cubic meter per second'].dimensionality,
@@ -178,15 +182,40 @@ def convert(self, key, unit, overwrite=False):
 
     conversion = lambda x, u: (x * u).to(unit).magnitude
 
+    def _uncer_conversion(key):
+        if self.uncertainty._units[key].dimensionality.__str__() != \
+            '[delta_temperature]':
+            temp = convert(
+                self.uncertainty, key, unit, overwrite=False,
+                cal_uncer=False
+            )
+        else:
+            temp = convert(
+                self.uncertainty, key, 'delta_'+unit._units.__str__(),
+                overwrite=False, cal_uncer=False
+            )
+        return temp[key], temp._units[key]
+
     if not overwrite:
         result = deepcopy(self[key])  # create new pandas Dataframe to return
         result._units = {}
+        if cal_uncer:
+            result.__dict__['uncertainty'] = deepcopy(self.uncertainty[key])
+            result.__dict__['uncertainty']._units = {}
         for k, uu in zip(key, old_unit):
             result[k] = self[k].apply(lambda x: conversion(x, uu))
             result._units[k] = unit
+            if cal_uncer:
+                uncer, uncer_units = _uncer_conversion(k)
+                result.__dict__['uncertainty'][k] = uncer
+                result.__dict__['uncertainty']._units[k] = uncer_units
         return result
     else:
         for k, u in zip(key, old_unit):
             self[k] = self[k].apply(lambda x: conversion(x, u))
             self._units[k] = unit
+            if cal_uncer:
+                uncer, uncer_units = _uncer_conversion(k)
+                self.__dict__['uncertainty'][k] = uncer
+                self.__dict__['uncertainty']._units[k] = uncer_units
         return self[key]
