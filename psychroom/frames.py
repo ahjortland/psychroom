@@ -29,4 +29,4 @@ def monkey_explore(self, keys=None):
 
 
 def monkey_units(self, keys=None):
-    return explore(self, keys=keys)
+    return units(self, keys=keys)
