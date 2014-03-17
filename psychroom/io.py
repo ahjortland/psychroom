@@ -95,7 +95,7 @@ def read(filepath_or_buffer, header=0, units=1, **kwargs):
 
     with open(filepath_or_buffer, 'r') as f:
         metadata = parse_metadata(f)
-        result = parse_raw_data(f, parse_dates=True, **kwargs)
+        result = parse_raw_data(f, **kwargs)
 
     result = append_metadata(result, metadata)
 
@@ -189,7 +189,13 @@ def parse_raw_data(handle, **kwargs):
 
     column_names = cleanse_names(read_col_metadata(handle.readline()))
     column_units = read_col_metadata(handle.readline())
-    result = pd.read_csv(handle, names=column_names, **kwargs)
+    if 'parse_dates' in kwargs:
+        parse_dates = kwargs['parse_dates']
+        kwargs.popitem('parse_dates')
+    else:
+        parse_dates = True
+    result = pd.read_csv(handle, names=column_names,
+                         parse_dates=parse_dates, **kwargs)
 
     # TODO It would be cool if key-unit pairs were methods that updated
     # with each call.

@@ -14,7 +14,19 @@ def monkey_patch():
     pd.DataFrame._get_metadata = _get_metadata
     pd.DataFrame._update_metadata = _update_metadata
 
-    pd.DataFrame.units = units
+    pd.DataFrame.units = monkey_units
     pd.DataFrame.descriptions = descriptions
-    pd.DataFrame.explore = explore
-    pd.DataFrame.convert = convert
+    pd.DataFrame.explore = monkey_explore
+    pd.DataFrame.convert = monkey_convert
+
+
+def monkey_convert(self, keys, new):
+    return convert(self, keys, new)
+
+
+def monkey_explore(self, keys=None):
+    return explore(self, keys=keys)
+
+
+def monkey_units(self, keys=None):
+    return explore(self, keys=keys)
