@@ -84,11 +84,13 @@ def units(frame, keys=None):
         return units
 
 
-def descriptions(self, keys=None):
+def descriptions(frame, keys=None):
     """Return a dictionary of a description of each column in dataframe.
 
     Parameters
     ----------
+    frame : pandas data frame
+        experimental test data frame object.
     keys : column name string
         When passed, the unit of the column named key is returned.
 
@@ -99,7 +101,7 @@ def descriptions(self, keys=None):
 
     """
 
-    desc = self._get_metadata('_descriptions')
+    desc = frame._get_metadata('_descriptions')
     if keys:
         return {key: val for key, val in desc.items() if key in keys}
     else:
