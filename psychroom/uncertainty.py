@@ -2,7 +2,6 @@
 """Methods for evaluating measurement uncertainty."""
 
 import numpy as np
-from pint import UnitRegistry
 from sympy import symbols, sympify, SympifyError
 
 from .unit import ureg
