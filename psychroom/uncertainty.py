@@ -28,9 +28,9 @@ class UncertaintyInfo(object):
 
     def __init__(self, names=[''], units=None, expr=None):
         self._xargs = symbols('x0:{}'.format(len(names)))
-        self._names = {}
+        self._names = {self.xargs[0]: names[0]}
         self._units = {}
-        for xarg, name in zip(self.xargs, names):
+        for xarg, name in zip(self.xargs[1:], names[1:]):
             self._names[xarg] = name
             self._units[xarg] = units[name] if units else ureg['']
         try:
@@ -169,6 +169,10 @@ def parse_uncertainty_info(line):
     # expression for uncertainty, filtering out empty strings.
     xs = [x0] + xs if isinstance(xs, list) else [x0] + [xs]
     xs = list(filter(None, xs))
+
+    # Make sure the first element is the first component of the
+    # original string.
+    assert xs[0] == x0
 
     # Form an uncertainty information object that will be used
     # to evaluate the measurement uncertainty when required.

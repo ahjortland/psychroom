@@ -6,9 +6,10 @@ from os.path import join
 
 import pandas as pd
 
-from .label_handler import translate_keys
-from .unit import parse_unit_string
 from .compat import (casefold, filter, isdecimal, isidentifier)
+from .label_handler import translate_keys
+from .uncertainty import parse_uncertainty_info
+from .unit import parse_unit_string
 
 
 def load(filepath='./', ext='.htf', **kwargs):
@@ -102,6 +103,7 @@ def read(filepath_or_buffer, header=0, units=1, **kwargs):
     # monkey-patching to store frame attributes and methods.
     result._metadata.append('_units')  # unit dictionary
     result._metadata.append('_descriptions')  # description dictionary
+    result._metadata.append('_uncertainty')  # uncertainty dictionary
     result._metadata = list(set(result._metadata))
 
     return result
@@ -128,6 +130,8 @@ def parse_metadata(handle):
         line = handle.readline().strip()
         if line.startswith('[raw data]'):
             return metadata
+        elif line.startswith('[uncertainty]'):
+            metadata['uncertainty'] = parse_uncertainty(handle)
         elif line.startswith('[') and line.endswith(']'):
             section = cleanse_names(line.strip().strip('[]'))
             metadata[section] = {}
@@ -151,11 +155,12 @@ def parse_metadata_info(info):
     unit : string
 
     """
+
     value, _, unit = [item.strip() for item in info.partition('[')]
     unit = unit.strip('[]') if unit else None
 
     # TODO Not happy with this code, don't like logic trees in general.
-    # Also, I think there is many oppurtunities for Exceptions, should
+    # Also, I think there is many opportunities for Exceptions, should
     # make this more robust.
     if unit:
         if casefold(unit) == 'bool':
@@ -167,6 +172,36 @@ def parse_metadata_info(info):
             value = float(value)
 
     return value, unit
+
+
+def parse_uncertainty(handle):
+    """Parse the lines pertaining to the measurement uncertainty.
+
+    Parameters
+    ----------
+    handle : file object
+        File object whose position is the start of the uncertainty
+        section in the experimental test file.
+
+    Returns
+    -------
+    info : dict
+        Dictionary containing measurement uncertainty information
+        for the measurements defined in the experimental test file
+        header.
+
+    """
+
+    line = handle.readline().strip()
+    info = {}
+    while not line.startswith('[') and not line.endswith(']'):
+        line_start = handle.tell()
+        key, uncer_info = parse_uncertainty_info(line)
+        info[key] = uncer_info
+        line = handle.readline().strip()
+    handle.seek(line_start)
+
+    return info
 
 
 def parse_raw_data(handle, **kwargs):
@@ -194,8 +229,6 @@ def parse_raw_data(handle, **kwargs):
     result = pd.read_csv(handle, names=column_names,
                          parse_dates=parse_dates, **kwargs)
 
-    # TODO It would be cool if key-unit pairs were methods that updated
-    # with each call.
     for key, unit in zip(result.keys(), column_units):
         result[key]._units = parse_unit_string(unit)
     result._units = {key: result[key]._units for key in result.keys()}
@@ -277,10 +310,15 @@ def append_metadata(data, metadata):
 
     data.metadata = metadata
     for section, meta in metadata.items():
-        data.__dict__[section] = pd.DataFrame(
-            {key: [info.value] for key, info in meta.items()}
-        )
-        for key, info in meta.items():
-            data.__dict__[section][key]._units = info.unit
+        if section == 'uncertainty':
+            data.__dict__['_uncertainty'] = meta
+            for v in meta.values():
+                v.units = {n: data.units(n) for n in v.names.values()}
+        else:
+            data.__dict__[section] = pd.DataFrame(
+                {key: [info.value] for key, info in meta.items()}
+            )
+            for key, info in meta.items():
+                data.__dict__[section][key]._units = info.unit
 
     return data
