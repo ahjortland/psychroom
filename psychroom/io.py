@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 """Experimental data input/output handler functions."""
-# TODO Uncertainty
 from collections import namedtuple
 import os
 from os.path import join
@@ -9,9 +9,6 @@ import pandas as pd
 from .label_handler import translate_keys
 from .unit import parse_unit_string
 from .compat import (casefold, filter, isdecimal, isidentifier)
-from .frames import monkey_patch
-
-monkey_patch()
 
 
 def load(filepath='./', ext='.htf', **kwargs):

@@ -1,111 +1,178 @@
-"""Uncertainty of data input/output handler functions."""
+# -*- coding: utf-8 -*-
+"""Methods for evaluating measurement uncertainty."""
 
-import pandas as pd
-import pdb
 import numpy as np
+from pint import UnitRegistry
+from sympy import symbols, sympify, SympifyError
 
-from uncer_class import Info_uncer, eval_uncer
-from frames import monkey_patch
-
-monkey_patch()
+from .unit import ureg
 
 
-def load_uncer(filepath, sep=';'):
-    """Load the standard file with uncertainty information
+class UncertaintyInfo(object):
+
+    """Object used to evaluate measurement uncertainty.
 
     Parameters
     ----------
-    filepath : str
-        directory containing experimental data files
+    names : [strings]
+        List of the names of the dependent variables used in the
+        uncertainty calculation. Note, the zeroth element is always the
+        variable which the uncertainty is evaluated, by convention.
+    units : [pint Quantity]
+        List of the units corresponding to each variable used in the
+        uncertainty calculation.
+    expr : sympy expression
+        Mathematical expression (or constant) that quantifies the
+        measurement uncertainty in terms of the arguments.
+
+    """
+
+    def __init__(self, names=[''], units=None, expr=None):
+        self._xargs = symbols('x0:{}'.format(len(names)))
+        self._names = {}
+        self._units = {}
+        for xarg, name in zip(self.xargs, names):
+            self._names[xarg] = name
+            self._units[xarg] = units[name] if units else ureg['']
+        try:
+            self._expr = sympify(expr) or sympify('nan')
+        except SympifyError as e:
+            raise e
+
+    @property
+    def names(self):
+        return self._names
+
+    @property
+    def units(self):
+        return self._units
+
+    @units.setter
+    def units(self, vals):
+        self._units = {xarg: vals[name] for xarg, name in self.names.items()}
+
+    @property
+    def xargs(self):
+        return self._xargs
+
+    @property
+    def expr(self):
+        return self._expr
+
+    def evaluate(self, frame):
+        """Evaluate the measurement uncertainty expression.
+
+        Parameters
+        ----------
+        frame : pandas DataFrame
+            Experimental test data frame containing measurements.
+
+        Returns
+        -------
+        result: pandas DataFrame or Series
+            Measurement uncertainty calculated for each measurement
+            using the uncertainty expression.
+
+        """
+
+        key = self.names[self.xargs[0]]
+        result = frame.copy()
+        result[key] = eval_uncertainty(key, result, self)
+
+        return result[key]
+
+    def __str__(self):
+        output_string = (
+            "Uncertainty information:\n" +
+            "Name:\t{0} [{1:P}]\n".format(self.names[self.xargs[0]],
+                                          self.units[self.xargs[0]].units) +
+            "Args:\n"
+        )
+        for x, n, u in zip(self.xargs,
+                           self.names.values(),
+                           self.units.values()):
+            output_string += " {0}:\t{1} [{2:P}]\n".format(x, n, u.units)
+        output_string += "Expr:\t{}".format(self.expr)
+
+        return output_string
+
+
+def eval_uncertainty(key, data, info):
+    """Evaluate the measurement uncertainty of a measurement.
+
+    Parameters
+    ----------
+    key : string
+        Name of the measurement.
+    data : pandas DataFrame
+        Experimental test data frame containing measurements.
+    info : UncertaintyInfo
+        Uncertainty information, in particular the required arguments
+        and the mathematical expression.
 
     Returns
     -------
-    uncer : list
-        list of Info_uncer
+    result : pandas DataFrame
+        Calculated measurement uncertainty for key.
 
     """
 
-    uncer = []
+    items = info.names.items()
+    f = lambda row: info.expr.evalf(subs={x: row[name] for x, name in items})
 
-    # start reading files
-    with open(filepath, 'r') as f:
-        # only continue if the first line is "[uncertainty]"
-        if read_entry(f, sep)[0] == '[uncertainty]':
-            line = read_entry(f, sep)  # skip line
-            line = read_entry(f, sep)
-            while not line[0] == '':
-                if len(line) == 1:  # assume zero uncertainty
-                    info = Info_uncer(x_name=line[0], expr=0.)
-                else:
-                    info = Info_uncer(x_name=line[:-1], expr=line[-1])
-                uncer.append(info)
-                line = read_entry(f, sep)
+    result = np.array([f(row) for ind, row in data.iterrows()])
 
-    return uncer
+    return result
 
 
-def read_entry(handle, sep=';'):
-    """
-    Read entries in the row in the file that its format is defined by seperator
-    sep
+def parse_uncertainty_info(line):
+    """Parse uncertainty information from standard test output file.
 
-    Parmeters:
-    ---------
-    handle:     file handle
-        test data file handle
+    Notes
+    -----
+    For information about the standard format for recording uncertainty
+    information, see [Uncertainty Documentation]
+    (https://github.com/ahjortland/psychroom/tree/master/docs)
 
-    Results:
-    ---------
-    output:     list
-        list of strings seperated by sep
+    Parameters
+    ----------
+    line : string
+        Line from standard output test file containing uncertainty
+        information in the standard format.
+
+    Returns
+    -------
+    result : UncertaintyInfo
+        Object containing information about the mathematical expression
+        used to calculate the measurement uncertainty as well as the
+        variables used and their units.
 
     """
 
-    return map(str.strip, handle.readline().strip(' \n'+sep).split(sep))
+    # The component before the equal sign by convention corresponds to
+    # variable whose uncertainty is defined by the expression.
+    x0, info = [item.strip() for item in line.split('=')]
 
+    # The remaining dependent variables of the mathematical
+    # expression are defined within curly braces followed by the
+    # actual mathematical expression that defines the measurement
+    # uncertainty.
+    xs, _, expr = [item.strip('{} ') for item in info.partition('}')]
 
-def uncer_cal(result, uncer):
-    """
-    Return another pandas.Dataframe with information of the uncertainty at each
-    value obtained from the experiment
+    # In some cases, there may not be additional dependent variables.
+    # In such a case, the partition function returns the mathematical
+    # expression, followed by two empty strings. Switch these when this
+    # happens.
+    if not expr:
+        xs, expr = expr, xs
 
-    Parmeters:
-    ---------
-    result  :   pandas Dataframe
-        data from experiment from io_.read_()
-    uncer   :   list of Info_uncer
-        information related to the uncertainty calculation from load_uncer
+    # Form a list of the arguments used to evaluate the mathematical
+    # expression for uncertainty, filtering out empty strings.
+    xs = [x0] + xs if isinstance(xs, list) else [x0] + [xs]
+    xs = list(filter(None, xs))
 
-    Results:
-    ---------
-    uncer_result   :    pandas Dataframe
-        uncertainty of data from experiment
+    # Form an uncertainty information object that will be used
+    # to evaluate the measurement uncertainty when required.
+    result = UncertaintyInfo(names=xs, expr=expr)
 
-    """
-
-    # default zero uncertainty
-    uncer_result = pd.DataFrame(np.zeros((
-        len(result.index), len(result.columns)
-    )), index=result.index, columns=result.columns)
-
-    # the uncertainty units and descriptions should be linked with each other
-    uncer_result._units = result._units
-    uncer_result._descriptions = result._descriptions
-
-    # assign values
-    for info in uncer:
-        uncer_result[info.x_name[0]] = eval_uncer(info.x_name[0], result, info)
-
-    return uncer_result
-
-if __name__ == '__main__':
-
-    import io_ as io2
-
-    path = './test_data/data_uncer_003.htf'
-    uncer_path = './test_data/uncertainty_003.htf'
-    df = io2.read_(path, **{'parse_dates': True})
-    uncer = load_uncer(uncer_path, ';')
-    uncer_result = uncer_cal(df, uncer)
-    print(uncer)
-    print(uncer_result)
+    return xs[0], result
