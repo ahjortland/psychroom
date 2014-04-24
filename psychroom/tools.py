@@ -120,10 +120,27 @@ def explore(self, keys=None):
 
     explore_string = "Column: {0}\n\tDescription:\t{1}\n\tUnit:\t\t{2}"
 
+    if 'uncertainty' in self.metadata:
+        uncer_string = "\tUncer. Eqn.:\t{0}\n\tUncer. Var.:\t{1}"
+        uncer_info = self.metadata['uncertainty']
+
     if not keys:
         for desc, unit in zip(self.descriptions().items(),
                               self.units().items()):
             print(explore_string.format(desc[0], desc[1], unit[1]))
+
+            if 'uncertainty' in self.metadata:  # printing uncertainty
+                var_string = uncer_info[desc[0]].var[0]
+                # separate the variable names by comma
+                for name in uncer_info[desc[0]].var[1:]:
+                    var_string = var_string+', '+name
+                if uncer_info[desc[0]].eqn.is_number:  # remove trailing zeros
+                    eqn_string = repr(uncer_info[desc[0]].eqn).rstrip('0')
+                else:
+                    eqn_string = uncer_info[desc[0]].eqn
+                print(uncer_string.format(
+                    eqn_string, var_string
+                ))
     else:
         pass
 
