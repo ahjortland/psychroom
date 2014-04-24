@@ -128,7 +128,7 @@ def explore(self, keys=None):
         pass
 
 
-def convert(self, key, unit, overwrite=False, cal_uncer=False):
+def convert(self, key, unit, overwrite=False, cal_uncer=True):
     """Convert a column in a data frame to a new unit.
 
     Parameters
@@ -140,7 +140,7 @@ def convert(self, key, unit, overwrite=False, cal_uncer=False):
         unit identifying string or pint unit object
     overwrite : [False] | True
         original data frame values will be overwritten if True
-    cal_uncer : [False] | True
+    cal_uncer : False | [True]
         uncertainty will be recalculated and appended to the returned
         data frame if True.
 
