@@ -35,7 +35,7 @@ def load_uncer(filepath, sep=';'):
             line = read_entry(f, sep)
             while not line[0] == '':
                 if len(line) == 1:  # assume zero uncertainty
-                    info = Info_uncer(x_name=line[0], expr=0.)
+                    info = Info_uncer(x_name=line[0], expr=float('nan'))
                 else:
                     info = Info_uncer(x_name=line[:-1], expr=line[-1])
                 uncer.append(info)
