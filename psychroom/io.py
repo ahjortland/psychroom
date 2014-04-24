@@ -287,14 +287,16 @@ def cleanse_uncer(data, metadata):
 
     UncertaintyInfo = namedtuple('UncertaintyInfo', ['var', 'eqn', 'ori_unit'])
 
-    def _zero_uncertainty(key):
-        return UncertaintyInfo([key], sym.sympify(0.), [data[key]._units])
+    def _nan_uncertainty(key):
+        return UncertaintyInfo(
+            [key], sym.sympify(float('nan')), [data[key]._units]
+        )
 
     if 'uncertainty' in metadata.keys():
         # check if uncertainty info exists for the variables
         for key in data.keys():
             if key not in metadata['uncertainty']:  # set zero uncertainty
-                metadata['uncertainty'][key] = _zero_uncertainty(key)
+                metadata['uncertainty'][key] = _nan_uncertainty(key)
             else:  # add the unit information to UncertaintyInfo
                 info = metadata['uncertainty'][key]
                 unit = []
@@ -307,7 +309,7 @@ def cleanse_uncer(data, metadata):
     else:
         metadata['uncertainty'] = {}
         for key in data.keys():
-            metadata['uncertainty'][key] = _zero_uncertainty(key)
+            metadata['uncertainty'][key] = _nan_uncertainty(key)
 
 
 def cleanse_names(names, bad_chars=[], repl='_'):
